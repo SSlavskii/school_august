@@ -9,8 +9,8 @@ table_path = '/home/ubuntu/gwas/old_gwas/sega/school_august/core_snps.csv'
 
 RS_ID = 'ref_rs_id'
 CHR = 'ref_chr'
-R_threshold = 0.1
-MAF_threshold = 0.05
+R_threshold = -0.1
+MAF_threshold = 0.0
 
 def get_snp_list(chr_num, table_path, bim_path):
     df = pd.read_table(table_path)
@@ -28,11 +28,11 @@ def get_table_for_chr(chr_num, keep_path=None, output_name=""):
     output_name = output_name + chr_num
 
     if keep_path is None:
-        query = f"{plink_path}  --bfile {bfile_path} --r with-freqs -out {output_name} --ld-snps {snps}" \
-                f" --ld-window-kb 150 --ld-window 10000000"
+        query = f"{plink_path}  --bfile {bfile_path} --r with-freqs -out {output_name} --snps {snps}" \
+                f" --ld-window-kb 3500"
     else:
-        query = f"{plink_path}  --bfile {bfile_path} --r with-freqs -out {output_name} --ld-snps {snps} " \
-                f"--ld-window-kb 150 --ld-window 10000000 --keep {keep_path}"
+        query = f"{plink_path}  --bfile {bfile_path} --r with-freqs -out {output_name} --snps {snps} " \
+                f"--ld-window-kb 3500 --keep {keep_path}"
 
     subprocess.call(query, shell=True)
     df = pd.read_csv(f"{output_name}.ld", sep='\s+')
@@ -65,6 +65,6 @@ if __name__ == "__main__":
             get_table_for_chr(i, keep_path=args.keep_path, output_name=args.output_name)
         frames = [pd.read_csv(f"{args.output_name + str(i)}.ld", sep='\t') for i in range(1, 23)]
         result = pd.concat(frames)
-        result.to_csv(f"{args.output_name}_all_chr.ld", index=False, sep='\t')
+        result.to_csv(f"{args.output_name}_all_chr_core_.ld", index=False, sep='\t')
         for i in range(1,23):
             os.remove(f"{args.output_name + str(i)}.ld")
