@@ -31,3 +31,10 @@ nations <- unique(all_info$`Population name`)
 
 sapply(nations, function(x) nation_to_keep(x))
 
+ids <- all_info[`Superpopulation name`=="European"]$`Sample name`
+df <- data.frame("V1"=ids, "V2" = ids)
+write.table(df, file=paste("samples_by_nation/EUR.keep", sep=""), 
+            col.names = F, row.names = F, quote = F)
+
+
+unique(all_info[all_info$`Superpopulation name`=="European"]$`Population name`)

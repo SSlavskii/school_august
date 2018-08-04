@@ -5,7 +5,7 @@ import os
 
 plink_path = '/home/ubuntu/gwas/old_gwas/tools/plink/plink'
 ref_path = '/home/ubuntu/gwas/old_gwas/sega/ld_real/by_chr/'
-table_path = '/home/ubuntu/gwas/old_gwas/sega/school_august/core_snps.csv'
+table_path = '/home/ubuntu/gwas/old_gwas/sega/school_august/core_snps_filtered.csv'
 
 RS_ID = 'ref_rs_id'
 CHR = 'ref_chr'
@@ -29,10 +29,10 @@ def get_table_for_chr(chr_num, keep_path=None, output_name=""):
 
     if keep_path is None:
         query = f"{plink_path}  --bfile {bfile_path} --r with-freqs -out {output_name} --ld-snps {snps}" \
-                f" --ld-window-kb 150 --ld-window 10000000"
+                f" --ld-window-kb 250 --ld-window 10000000"
     else:
         query = f"{plink_path}  --bfile {bfile_path} --r with-freqs -out {output_name} --ld-snps {snps} " \
-                f"--ld-window-kb 150 --ld-window 10000000 --keep {keep_path}"
+                f"--ld-window-kb 250  --ld-window 10000000 --keep {keep_path}"
 
     subprocess.call(query, shell=True)
     df = pd.read_csv(f"{output_name}.ld", sep='\s+')

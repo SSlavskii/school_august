@@ -29,10 +29,10 @@ def get_table_for_chr(chr_num, keep_path=None, output_name=""):
 
     if keep_path is None:
         query = f"{plink_path}  --bfile {bfile_path} --r with-freqs -out {output_name} --snps {snps}" \
-                f" --ld-window-kb 3500"
+                f" --ld-window-kb 100000  --ld-window 10000"
     else:
         query = f"{plink_path}  --bfile {bfile_path} --r with-freqs -out {output_name} --snps {snps} " \
-                f"--ld-window-kb 3500 --keep {keep_path}"
+                f"--ld-window-kb 100000   --ld-window 10000  --keep {keep_path}"
 
     subprocess.call(query, shell=True)
     df = pd.read_csv(f"{output_name}.ld", sep='\s+')
@@ -65,6 +65,6 @@ if __name__ == "__main__":
             get_table_for_chr(i, keep_path=args.keep_path, output_name=args.output_name)
         frames = [pd.read_csv(f"{args.output_name + str(i)}.ld", sep='\t') for i in range(1, 23)]
         result = pd.concat(frames)
-        result.to_csv(f"{args.output_name}_all_chr_core_.ld", index=False, sep='\t')
+        result.to_csv(f"{args.output_name}_all_chr_core.ld", index=False, sep='\t')
         for i in range(1,23):
             os.remove(f"{args.output_name + str(i)}.ld")
