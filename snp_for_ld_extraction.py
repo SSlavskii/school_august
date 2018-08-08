@@ -9,7 +9,7 @@ table_path = '/home/ubuntu/gwas/old_gwas/sega/school_august/core_snps_filtered.c
 
 RS_ID = 'ref_rs_id'
 CHR = 'ref_chr'
-R_threshold = 0.1
+R_threshold = 0.1 #abs R threshold
 MAF_threshold = 0.05
 
 def get_snp_list(chr_num, table_path, bim_path):
@@ -28,11 +28,25 @@ def get_table_for_chr(chr_num, keep_path=None, output_name=""):
     output_name = output_name + chr_num
 
     if keep_path is None:
-        query = f"{plink_path}  --bfile {bfile_path} --r with-freqs -out {output_name} --ld-snps {snps}" \
-                f" --ld-window-kb 250 --ld-window 10000000"
+        query = f"""
+        {plink_path}  
+        --bfile {bfile_path} 
+        --r with-freqs 
+        -out {output_name} 
+        --ld-snps {snps}  
+        --ld-window-kb 250 
+        --ld-window 10000000 
+        """
     else:
-        query = f"{plink_path}  --bfile {bfile_path} --r with-freqs -out {output_name} --ld-snps {snps} " \
-                f"--ld-window-kb 250  --ld-window 10000000 --keep {keep_path}"
+        query = f"""
+        {plink_path}  --bfile {bfile_path} 
+        --r with-freqs 
+        -out {output_name} 
+        --ld-snps {snps} 
+        --ld-window-kb 250  
+        --ld-window 10000000 
+        --keep {keep_path} 
+        """
 
     subprocess.call(query, shell=True)
     df = pd.read_csv(f"{output_name}.ld", sep='\s+')

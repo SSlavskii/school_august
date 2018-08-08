@@ -9,7 +9,7 @@ table_path = '/home/ubuntu/gwas/old_gwas/sega/school_august/core_snps.csv'
 
 RS_ID = 'ref_rs_id'
 CHR = 'ref_chr'
-R_threshold = -0.1
+R_threshold = -0.1 #abs R threshold
 MAF_threshold = 0.0
 
 def get_snp_list(chr_num, table_path, bim_path):
