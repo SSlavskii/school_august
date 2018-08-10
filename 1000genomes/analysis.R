@@ -12,6 +12,7 @@ sum(samples %in% all_info$`Sample name`)
 #2504 samples
 
 all_info <- all_info[`Sample name` %in% samples]
+all_info[ , .(.N), by=`Population name`]
 
 sum(all_info$`Superpopulation code`=="EUR")
 # 503 
