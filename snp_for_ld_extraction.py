@@ -35,7 +35,8 @@ def get_table_for_chr(chr_num, keep_path=None, output_name=""):
         -out {output_name} 
         --ld-snps {snps}  
         --ld-window-kb 250 
-        --ld-window 10000000 
+        --ld-window 10000000
+	--keep-allele-order 
         """
     else:
         query = f"""
@@ -44,7 +45,8 @@ def get_table_for_chr(chr_num, keep_path=None, output_name=""):
         -out {output_name} 
         --ld-snps {snps} 
         --ld-window-kb 250  
-        --ld-window 10000000 
+        --ld-window 10000000
+	--keep-allele-order 
         --keep {keep_path} 
         """
 

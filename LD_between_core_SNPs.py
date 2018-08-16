@@ -29,10 +29,10 @@ def get_table_for_chr(chr_num, keep_path=None, output_name=""):
 
     if keep_path is None:
         query = f"{plink_path}  --bfile {bfile_path} --r with-freqs -out {output_name} --snps {snps}" \
-                f" --ld-window-kb 100000  --ld-window 10000"
+                f" --ld-window-kb 100000  --ld-window 10000 --keep-allele-order"
     else:
         query = f"{plink_path}  --bfile {bfile_path} --r with-freqs -out {output_name} --snps {snps} " \
-                f"--ld-window-kb 100000   --ld-window 10000  --keep {keep_path}"
+                f"--ld-window-kb 100000   --ld-window 10000  --keep-allele-order --keep {keep_path}"
 
     subprocess.call(query, shell=True)
     df = pd.read_csv(f"{output_name}.ld", sep='\s+')
