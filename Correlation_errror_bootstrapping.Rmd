@@ -1,0 +1,53 @@
+---
+title: "Sampling error and bootstrapping"
+output: html_notebook
+---
+
+```{r}
+get_haplotypes_freq <- function(p_a, p_b, r){
+  p_ab = r * sqrt(p_a * (1 - p_a) * p_b * (1 - p_b)) + p_a*p_b
+  p_aB = p_a - p_ab
+  p_Ab = p_b - p_ab
+  
+  if ((p_Ab<0) | (p_aB<0)) {
+    print("Wrong allele frequences for given r")
+    return -1
+  }
+  p_AB = 1 - p_ab - p_aB - p_Ab
+  return(c(p_AB, p_Ab, p_aB, p_ab))
+} 
+
+get_r <- function(vector_of_haplotypes){
+  actual_hapl_freq = sapply(c(1:4), function(x) { sum(vector_of_haplotypes==x)/length(vector_of_haplotypes) })
+  P = actual_hapl_freq[1] # p_AB
+  Q = actual_hapl_freq[2] # p_Ab
+  R = actual_hapl_freq[3] # p_aB
+  S = actual_hapl_freq[4] # p_ab
+  r = (P*S - Q*R)/sqrt((P+Q)*(R+S)*(P+R)*(Q+S))
+  return(r)
+}
+
+```
+
+
+```{r}
+general_sample_size = 2*10**4
+p_a = 0.4
+p_b = 0.4
+general_vector_of_haplotypes <- sample(c(1:4), size=general_sample_size, replace=TRUE, prob=get_haplotypes_freq(p_a = p_a, p_b = p_b, r = real_r))
+
+layout(matrix(c(1,2), ncol = 2, byrow = TRUE))
+general_vector_of_haplotypes <- sample(c(1:4), size=general_sample_size, replace=TRUE, prob=get_haplotypes_freq(p_a = p_a, p_b = p_b, r = 0))
+hist(replicate(200, get_r(sample(general_vector_of_haplotypes, 200))), xlab = 'r', main = '')
+abline(v=get_r(general_vector_of_haplotypes), col='blue')
+general_vector_of_haplotypes <- sample(c(1:4), size=general_sample_size, replace=TRUE, prob=get_haplotypes_freq(p_a = p_a, p_b = p_b, r = 0.7))
+hist(replicate(200, get_r(sample(general_vector_of_haplotypes, 200))), xlab = 'r', main='')
+abline(v=get_r(general_vector_of_haplotypes), col='blue')
+
+```
+
+
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
