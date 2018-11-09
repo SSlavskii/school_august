@@ -1,35 +1,11 @@
 library(bindata)
-
-get_haplotypes_freq <- function(p_a, p_b, r){
-  p_ab = r * sqrt(p_a * (1 - p_a) * p_b * (1 - p_b)) + p_a*p_b
-  p_aB = p_a - p_ab
-  p_Ab = p_b - p_ab
-  
-  if ((p_Ab<0) | (p_aB<0)) {
-    print("Wrong allele frequences for given r")
-    return -1
-  }
-  p_AB = 1 - p_ab - p_aB - p_Ab
-  return(c(p_AB, p_Ab, p_aB, p_ab))
-} 
-
-get_r <- function(p_a, p_b, r, sample_size){
-  hapl_freq <- get_haplotypes_freq(p_a = p_a, p_b = p_b, r = r)
-  sample = sample(c(1:4), size=sample_size, replace=TRUE, prob=hapl_freq)
-  actual_hapl_freq = sapply(c(1:4), function(x) { sum(sample==x)/length(sample)})
-  P = actual_hapl_freq[1] # p_AB
-  Q = actual_hapl_freq[2] # p_Ab
-  R = actual_hapl_freq[3] # p_aB
-  S = actual_hapl_freq[4] # p_ab
-  r = (P*S - Q*R)/sqrt((P+Q)*(R+S)*(P+R)*(Q+S))
-}
-
+source("constants_and_functions.R")
 real_r = 0.8
 sample_size = 200
 p_a = 0.1
 p_b = 0.1
 number_of_simulations = 100 # snp pairs
-
+'
 get_r_rmvbin <- function(p_a, p_b, r, sample_size){
   "sample  = mvrnorm(n=sample_size, mu=c(p_a,p_b), 
                     Sigma = matrix(c(1,real_r,real_r,1), nrow = 2)*0.25)"
@@ -41,11 +17,12 @@ get_r_rmvbin <- function(p_a, p_b, r, sample_size){
 start = Sys.time()
 corr_coeff <- replicate(number_of_simulations, get_r_rmvbin(p_a=p_a, p_b=p_b, r=real_r, sample_size=sample_size))
 Sys.time() - start
-
+'
 
 
 start = Sys.time()
-corr_coeffs <- replicate(number_of_simulations, get_r(p_a=p_a, p_b=p_b, r=real_r, sample_size=sample_size))
+corr_coeff <- replicate(number_of_simulations, get_r_from_haplotypes(get_vector_of_haplotypes(
+  number_of_individuals = sample_size, p_a=p_a, p_b=p_b, r=real_r)))
 Sys.time() - start
 
 

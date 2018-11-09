@@ -4,47 +4,29 @@ output: html_notebook
 ---
 
 ```{r}
-haplotype_constants = c(1,3,7,15)
-get_haplotypes_freq <- function(p_a, p_b, r){
-  p_ab = r * sqrt(p_a * (1 - p_a) * p_b * (1 - p_b)) + p_a*p_b
-  p_aB = p_a - p_ab
-  p_Ab = p_b - p_ab
-  
-  if ((p_Ab<0) | (p_aB<0)) {
-    print("Wrong allele frequences for given r")
-    return -1
-  }
-  p_AB = 1 - p_ab - p_aB - p_Ab
-  return(c(p_AB, p_Ab, p_aB, p_ab))
-} 
-
-
-get_r <- function(vector_of_haplotypes){
-  actual_hapl_freq = sapply(haplotype_constants, function(x) { sum(vector_of_haplotypes==x)/length(vector_of_haplotypes) })
-  P = actual_hapl_freq[1] # p_AB
-  Q = actual_hapl_freq[2] # p_Ab
-  R = actual_hapl_freq[3] # p_aB
-  S = actual_hapl_freq[4] # p_ab
-  r = (P*S - Q*R)/sqrt((P+Q)*(R+S)*(P+R)*(Q+S))
-  return(r)
-}
-
+source("constants_and_functions.R")
 ```
 
+How close are estimations of sampling error through bootstrapping?
 
 ```{r}
-general_sample_size = 2*10**4
+general_sample_size = 10**4
 p_a = 0.4
 p_b = 0.4
 
 
 layout(matrix(c(1,2), ncol = 2, byrow = TRUE))
-general_vector_of_haplotypes <- sample(haplotype_constants, size=general_sample_size, replace=TRUE, prob=get_haplotypes_freq(p_a = p_a, p_b = p_b, r = 0))
-hist(replicate(1000, get_r(sample(general_vector_of_haplotypes, 200))), xlab = 'r', main = '',breaks = 20)
-abline(v=get_r(general_vector_of_haplotypes), col='blue')
-general_vector_of_haplotypes <- sample(haplotype_constants, size=general_sample_size, replace=TRUE, prob=get_haplotypes_freq(p_a = p_a, p_b = p_b, r = 0.85))
-hist(replicate(1000, get_r(sample(general_vector_of_haplotypes, 200))), xlab = 'r', main='', breaks = 20)
-abline(v=get_r(general_vector_of_haplotypes), col='blue')
+general_vector_of_haplotypes <- get_vector_of_haplotypes(number_of_individuals = general_sample_size, 
+                                                         p_a = p_a, p_b = p_b, r = 0)
+r_values <- replicate(10000,  get_r_from_haplotypes(sample(general_vector_of_haplotypes, 200)))
+hist(r_values, xlab = 'r', main = '',breaks = 20)
+abline(v=get_r_from_haplotypes(general_vector_of_haplotypes), col='blue')
+
+general_vector_of_haplotypes <- sample(haplotype_constants, size=general_sample_size, replace=TRUE, prob=get_haplotypes_freq(p_a = p_a, p_b = p_b, r = 0.9))
+r_values <- replicate(10000, get_r_from_haplotypes(sample(general_vector_of_haplotypes, 200)))
+hist(r_values, xlab = 'r', main='', breaks = 20)
+abline(v=get_r_from_haplotypes(general_vector_of_haplotypes), col='blue')
+print(mean(r_values))
 
 ```
 
@@ -52,8 +34,9 @@ abline(v=get_r(general_vector_of_haplotypes), col='blue')
 library(boot)
 LD <- function(data, indices) {
   d <- data[indices] # allows boot to select sample
-  return(get_r(d))
-} 
+  return(get_r_from_haplotypes(d))
+}
+
 small_sample_size = 200
 
 layout(matrix(c(1,2), ncol = 2, byrow = TRUE))
@@ -61,12 +44,37 @@ small_sample = sample(haplotype_constants, size=small_sample_size, replace=TRUE,
 results <- boot(data=small_sample, statistic=LD, R=1000)
 hist(results$t, breaks = 20, xlab = 'r', main='r_real=0.0')
 abline(v=results$t0, col='blue')
-small_sample = sample(haplotype_constants, size=small_sample_size, replace=TRUE, prob=get_haplotypes_freq(p_a=p_a, p_b=p_b, r=0.85))
+small_sample = sample(haplotype_constants, size=small_sample_size, replace=TRUE, prob=get_haplotypes_freq(p_a=p_a, p_b=p_b, r=0.9))
 results <- boot(data=small_sample, statistic=LD, R=1000)
-hist(results$t, breaks = 20, xlab = 'r', main='r_real=0.85')
+hist(results$t, breaks = 20, xlab = 'r', main='r_real=0.9')
 abline(v=results$t0, col='blue')
 ```
 
+How LD calculated from genotypes and haplotypes match?
+
+```{r}
+get_r_genotype_haplotype <- function(sample_size, p_a, p_b, r){
+  haplotypes <- get_vector_of_haplotypes(number_of_individuals=sample_size, p_a=p_a, p_b=p_b, r=r)
+  c(get_r_from_genotypes(haplotypes), get_r_from_haplotypes(haplotypes))
+}
+
+rs <- as.matrix(replicate(1000, get_r_genotype_haplotype(sample_size = 100, 0.5,0.5, r=0.8)), nrow =2)
+plot(x = rs[1,], y = rs[2,], xlab = "r from genotypes", ylab = "r from haplotypes")
+```
+We can see that estimation of corrlation via genotypes results in larger sampling error.
+
+```{r}
+get_sampling_error_for_specific_parameters <- function(sample_size, p_a, p_b, r, number_of_simulations){
+  rs <- as.matrix(replicate(number_of_simulations, get_r_genotype_haplotype(sample_size = sample_size, p_a=p_a,p_b=p_b, r=r)), nrow =2)
+  c(sd(rs[1,]), sd(rs[2,]))
+}
+
+standard_deviation <- as.matrix(replicate(200, get_sampling_error_for_specific_parameters(sample_size = 100, 0.5,0.5, r=runif(1), number_of_simulations=200)), nrow =2)
+plot(x = standard_deviation[1,], y = standard_deviation[2,], xlab = "sd from genotypes", ylab = "sd from haplotypes")
+abline(b=1, a =0)
+
+
+```
 
 Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
 
