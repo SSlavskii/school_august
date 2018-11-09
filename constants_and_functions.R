@@ -43,3 +43,11 @@ get_r_from_genotypes <- function(vector_of_haplotypes){
   matrix_of_genotypes <- haplotypes_to_genotypes(vector_of_haplotypes)
   return(cor(matrix_of_genotypes[1,], matrix_of_genotypes[2,]))
 }
+
+
+library(boot)
+
+LD <- function(data, indices) {
+  d <- data[indices] # allows boot to select sample
+  return(get_r_from_haplotypes(d))
+}

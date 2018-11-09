@@ -31,11 +31,7 @@ print(mean(r_values))
 ```
 
 ```{r}
-library(boot)
-LD <- function(data, indices) {
-  d <- data[indices] # allows boot to select sample
-  return(get_r_from_haplotypes(d))
-}
+#bootstrapping
 
 small_sample_size = 200
 
@@ -61,7 +57,7 @@ get_r_genotype_haplotype <- function(sample_size, p_a, p_b, r){
 rs <- as.matrix(replicate(1000, get_r_genotype_haplotype(sample_size = 100, 0.5,0.5, r=0.8)), nrow =2)
 plot(x = rs[1,], y = rs[2,], xlab = "r from genotypes", ylab = "r from haplotypes")
 ```
-We can see that estimation of corrlation via genotypes results in larger sampling error.
+We can see that estimation of corrlation via genotypes causes larger sampling error.
 
 ```{r}
 get_sampling_error_for_specific_parameters <- function(sample_size, p_a, p_b, r, number_of_simulations){

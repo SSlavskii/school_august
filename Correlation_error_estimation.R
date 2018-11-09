@@ -39,7 +39,7 @@ hist(z_s)
 var_in_z = 1/(sample_size - 3)
 var_in_z/var_after_z_transform
 
-
+'
 var_from_r <- sapply(seq(0,1,0.05), function(real_r) {
   
   corr_coeff = replicate(number_of_simulations, get_r_rmvbin(p_a=p_a, p_b=p_b, r=real_r, sample_size=sample_size))
@@ -51,7 +51,7 @@ plot(x=var_from_r[1,], y=var_from_r[2,], xlim = c(0,0.02), ylim = c(0,0.02))
 abline(a=0, b=1)
 plot(x=seq(0,1,0.05), y=var_from_r[1,])
 plot(x=seq(0,1,0.05), y=var_from_r[2,])
-
+'
 
 
 
@@ -60,12 +60,10 @@ sample_size = 1000
 var_from_p <- sapply(seq(0.1,0.9,0.1), function(p) {
   p_a=p
   p_b=p
-  real_r = 0.0
-  corr_coeffs = sapply(c(1:number_of_simulations), function(x) {
-    sample = rmvbin(sample_size, margprob = c(p_a, p_b), 
-                    bincorr = (1-real_r)*diag(2)+real_r )
-    cor(sample[,1], sample[,2])
-  })
+  real_r = 0.5
+  corr_coeffs = replicate(number_of_simulations, 
+                          get_r_from_haplotypes(get_vector_of_haplotypes(
+                            sample_size, p_a, p_b, r = real_r)))
   var(corr_coeffs)
 })
 plot(x=seq(0.1,0.9,0.1), y=var_from_p, xlab='p')
@@ -73,67 +71,53 @@ abline(a=1/sample_size, b=0)
 
 ## bootstraping
 
-real_r = 0.8
-sample_size = 200
+real_r = 0.5
+sample_size = 100
 p_a = 0.1
 p_b = 0.1
-number_of_simulations = 200
-sample = rmvbin(sample_size, margprob = c(p_a, p_b), 
-                bincorr = (1-real_r)*diag(2)+real_r )
+number_of_simulations = 500
+number_of_bootstrap_iterations = 200
+sample = get_vector_of_haplotypes(number_of_individuals = sample_size, p_a, p_b, r = real_r)
 
-library(boot)
-LD <- function(data, indices) {
-  d <- data[indices,] # allows boot to select sample 
-  return(cor(d[,1], d[,2]))
-} 
 
-results <- boot(data=sample, statistic=LD, R=200)
+results <- boot(data=sample, statistic=LD, R=number_of_bootstrap_iterations)
 results
 boot.ci(results, type="bca")
 
 
-CIs  = sapply(c(1:500), function(x){
-  sample = rmvbin(sample_size, margprob = c(p_a, p_b), 
-                  bincorr = (1-real_r)*diag(2)+real_r )
-  results <- boot(data=sample, statistic=LD, R=200)
+CIs  = sapply(c(1:number_of_simulations), function(x){
+  sample = get_vector_of_haplotypes(number_of_individuals = sample_size, p_a, p_b, r = real_r)
+  results <- boot(data=sample, statistic=LD, R=number_of_bootstrap_iterations)
   boot.ci(results, type="bca")$bca[1,c(4,5)]
 })
-sum(CIs[1,]>real_r | CIs[2,]<real_r)
+sum(CIs[1,]>real_r | CIs[2,]<real_r)/number_of_simulations*100 # type I error rate
 
 
-corr_coeff <- sapply(c(1:number_of_simulations), function(x) {
-  sample = rmvbin(sample_size, margprob = c(p_a, p_b), 
-                  bincorr = (1-real_r)*diag(2)+real_r )
-  cor(sample[,1], sample[,2])
-})
-
-sd(corr_coeff)
 
 # bootstraping of delta r
-
-r1 = 0.7
+number_of_bootstrap_iterations = 200
+number_of_simulations = 100
+r1 = 0.2
 p_a1 = 0.2
 p_b1 = 0.2
 r2 = 0.8
 p_a2 = 0.4
 p_b2 = 0.4
-sample_size = 200
+sample_size = 100
 
 get_CI_for_delta_r <- function(x){
-  sample1 = rmvbin(sample_size, margprob = c(p_a1, p_b1), 
-                   bincorr = (1-r1)*diag(2)+r1 )
-  sample2 = rmvbin(sample_size, margprob = c(p_a2, p_b2), 
-                   bincorr = (1-r2)*diag(2)+r2 )
+  sample1 = get_vector_of_haplotypes(number_of_individuals = sample_size, p_a, p_b, r = r1)
+  sample2 = get_vector_of_haplotypes(number_of_individuals = sample_size, p_a, p_b, r = r2)
   
   delta_r <- function(data, indices) {
     d <- data[indices,] # allows boot to select sample 
-    return(cor(d[,3], d[,4]) - cor(d[,1], d[,2]))
+    return(get_r_from_haplotypes(d[,2]) - get_r_from_haplotypes(d[,1]))
   } 
   
-  results <- boot(data=cbind(sample1,sample2), statistic=delta_r, R=200)
+  results <- boot(data=cbind(sample1,sample2), statistic=delta_r, R=number_of_bootstrap_iterations)
   results
   boot.ci(results, type="bca")$bca[1,c(4,5)]
   } 
 
-CIs  = sapply(c(1:100), get_CI_for_delta_r)
-sum(CIs[1,]>(r2-r1) | CIs[2,]<(r2-r1))
+CIs  = sapply(c(1:number_of_simulations), get_CI_for_delta_r)
+sum(CIs[1,]>(r2-r1) | CIs[2,]<(r2-r1))/number_of_simulations*100 
